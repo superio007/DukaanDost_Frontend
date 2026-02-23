@@ -21,7 +21,7 @@ function App() {
           }
         />
         <Route
-          path="/auth/register"
+          path="/auth/signup"
           element={
             <Suspense fallback={<FallbackLoader />}>
               <RegisterPage />

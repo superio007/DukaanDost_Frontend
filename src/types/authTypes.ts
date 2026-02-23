@@ -15,3 +15,15 @@ export type AuthState = {
   setAuth: (user: User, token: string) => void;
   logout: () => void;
 };
+
+export type SigninForm = {
+  email: string;
+  password: string;
+};
+
+export type SignupForm = {
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+};
