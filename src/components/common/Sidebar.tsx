@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   FileText,
   Archive,
-  Users,
   LogOut,
   Settings,
 } from "lucide-react";
@@ -14,7 +13,6 @@ const navItems = [
   { name: "Dashboard", icon: LayoutDashboard, path: "/" },
   { name: "Sample Requests", icon: FileText, path: "/sample-requests" },
   { name: "Inventory", icon: Archive, path: "/inventory" },
-  { name: "Users", icon: Users, path: "/users" },
   { name: "Settings", icon: Settings, path: "/settings" },
 ];
 
@@ -22,7 +20,7 @@ const Sidebar = () => {
   const logout = useAuthStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
   return (
-    <aside className="w-20 md:w-64 h-screen shrink-0 border-r border-slate-200 bg-white flex flex-col">
+    <aside className="w-20 md:w-64 min-h-screen shrink-0 border-r border-slate-200 bg-white flex flex-col">
       {/* Header */}
       <div className="p-6 flex items-center gap-3">
         <span className="bg-[#1c6bf2] text-white rounded p-2">
