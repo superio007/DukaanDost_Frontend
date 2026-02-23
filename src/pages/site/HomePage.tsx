@@ -1,6 +1,5 @@
 import {
   Bell,
-  Plus,
   Search,
   BadgeCheck,
   ClipboardClock,
@@ -62,12 +61,6 @@ const HomePage = () => {
               <p className="text-slate-500">
                 Welcome back, Sarah. Here's what's happening today.
               </p>
-            </div>
-            <div className="flex md:flex-row flex-col gap-3">
-              <button className="flex items-center gap-2 px-4 py-2 bg-[#1c6bf2] text-white rounded text-sm font-medium hover:bg-[#1c6bf2]/90 transition-all shadow-lg shadow-[#1c6bf2]/20">
-                <Plus size={18} />
-                <span>New Request</span>
-              </button>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

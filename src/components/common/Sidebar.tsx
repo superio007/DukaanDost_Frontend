@@ -4,7 +4,6 @@ import {
   FileText,
   Archive,
   LogOut,
-  Settings,
 } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { NavLink } from "react-router-dom";
@@ -13,7 +12,6 @@ const navItems = [
   { name: "Dashboard", icon: LayoutDashboard, path: "/" },
   { name: "Sample Requests", icon: FileText, path: "/sample-requests" },
   { name: "Inventory", icon: Archive, path: "/inventory" },
-  { name: "Settings", icon: Settings, path: "/settings" },
 ];
 
 const Sidebar = () => {
