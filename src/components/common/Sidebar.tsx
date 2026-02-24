@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 const navItems = [
   { name: "Dashboard", icon: LayoutDashboard, path: "/" },
@@ -17,6 +18,19 @@ const navItems = [
 const Sidebar = () => {
   const logout = useAuthStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
+  const role = user?.role;
+
+  const filteredNavItems = navItems.filter((item) => {
+    // remove Inventory for SALES and SAMPLING_HEAD
+    if (
+      (role === "SALES" || role === "SAMPLING_HEAD") &&
+      item.name === "Inventory"
+    ) {
+      return false;
+    }
+    return true;
+  });
+
   return (
     <aside className="w-20 md:w-64 min-h-screen shrink-0 border-r border-slate-200 bg-white flex flex-col">
       {/* Header */}
@@ -32,7 +46,7 @@ const Sidebar = () => {
 
       {/* Navigation */}
       <nav className="flex-1 px-4 py-4 space-y-1">
-        {navItems.map((item) => {
+        {filteredNavItems.map((item) => {
           const Icon = item.icon;
 
           return (

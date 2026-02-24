@@ -21,6 +21,8 @@ const fetchSampleRequests = async (page: number) => {
 const SampleRequest = ({ isHomepage = false }) => {
   const navigate = useNavigate();
   const [openModal, setOpenModal] = useState(false);
+  const [isRole, setisRole] = useState("");
+  const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [dateFilter, setDateFilter] = useState("ALL");
@@ -35,6 +37,7 @@ const SampleRequest = ({ isHomepage = false }) => {
     if (!isAuthenticated) {
       navigate("/auth/signin");
     }
+    setisRole(user?.role || "");
   }, [isAuthenticated, navigate]);
   const { data: requests, isLoading: isReqestsLoading } = useQuery({
     queryKey: [`sample-requests`, page],
@@ -264,7 +267,7 @@ const SampleRequest = ({ isHomepage = false }) => {
                       Request Status
                     </th>
                     <th
-                      className={`${isHomepage && "hidden"} py-4 px-6 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right`}
+                      className={`${isHomepage && "hidden"} ${isRole === "SALES" && "hidden"} py-4 px-6 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right`}
                     >
                       Actions
                     </th>
@@ -332,7 +335,7 @@ const SampleRequest = ({ isHomepage = false }) => {
                             </td>
 
                             <td
-                              className={`${isHomepage && "hidden"} py-4 px-6 text-right`}
+                              className={`${isHomepage && "hidden"} ${isRole === "SALES" && "hidden"} py-4 px-6 text-right`}
                             >
                               <div className="flex items-center justify-end gap-1">
                                 <button
