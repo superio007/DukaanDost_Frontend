@@ -1,7 +1,6 @@
 import { useAuthStore } from "../../store/authStore";
 import { useEffect, useState } from "react";
 import {
-  Bell,
   TextAlignCenter,
   ChevronDown,
   SquarePen,
@@ -332,7 +331,9 @@ const SampleRequest = ({ isHomepage = false }) => {
                               </span>
                             </td>
 
-                            <td className={`${isHomepage && "hidden"} py-4 px-6 text-right`}>
+                            <td
+                              className={`${isHomepage && "hidden"} py-4 px-6 text-right`}
+                            >
                               <div className="flex items-center justify-end gap-1">
                                 <button
                                   onClick={() => {
