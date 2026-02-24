@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { NavLink } from "react-router-dom";
-import { useEffect, useState } from "react";
 
 const navItems = [
   { name: "Dashboard", icon: LayoutDashboard, path: "/" },
