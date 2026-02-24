@@ -1,6 +1,6 @@
 import { useAuthStore } from "../../store/authStore";
 import { useEffect, useState } from "react";
-import { Bell, Search, ChevronDown, SquarePen, Plus, X } from "lucide-react";
+import { ChevronDown, SquarePen, Plus, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../utils/api";
@@ -84,25 +84,6 @@ const Inventory = () => {
   };
   return (
     <main className="flex-1 flex flex-col min-w-0 min-h-screen bg-background-light">
-      {/* HEADER */}
-      <header className="h-16 flex items-center justify-between px-8 bg-white border-b border-slate-200">
-        <div className="w-full max-w-xl relative">
-          <Search
-            size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-          />
-          <input
-            className="w-full bg-slate-100 rounded pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-[#1c6bf2]/20"
-            placeholder="Search fabrics..."
-            type="text"
-          />
-        </div>
-
-        <button className="p-2 text-slate-500 hover:bg-slate-100 ml-4 rounded">
-          <Bell size={18} />
-        </button>
-      </header>
-
       <div className="flex-1 p-8 overflow-y-auto">
         <div className="flex flex-col mb-3 md:mb-6 md:flex-row md:items-center justify-between gap-4">
           <div className="">

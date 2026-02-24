@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import {
   Bell,
   TextAlignCenter,
-  Search,
   ChevronDown,
   SquarePen,
   User,
@@ -20,7 +19,7 @@ const fetchSampleRequests = async (page: number) => {
   const res = await api.get(`/api/sample-requests?page=${page}&limit=10`);
   return res?.data?.data;
 };
-const SampleRequest = () => {
+const SampleRequest = ({ isHomepage = false }) => {
   const navigate = useNavigate();
   const [openModal, setOpenModal] = useState(false);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -120,25 +119,10 @@ const SampleRequest = () => {
   return (
     <>
       <main className="flex-1 flex flex-col min-w-0 min-h-screen bg-background-light">
-        <header className="h-16 flex items-center justify-between px-8 bg-white  border-b border-slate-200  z-10">
-          <div className="w-full max-w-xl">
-            <div className="relative group">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#1c6bf2] transition-colors">
-                <Search size={18} />
-              </span>
-              <input
-                className="w-full bg-slate-100  border-none rounded pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-[#1c6bf2]/20 transition-all"
-                placeholder="Search orders, fabrics, or clients..."
-                type="text"
-              />
-            </div>
-          </div>
-          <button className="relative p-2 text-slate-500 hover:bg-slate-100 ml-4 rounded transition-colors">
-            <Bell size={18} />
-          </button>
-        </header>
-        <div className="flex-1 p-8 overflow-y-auto">
-          <div className="flex flex-col mb-3 md:mb-6 md:flex-row md:items-center justify-between gap-4">
+        <div className={`flex-1 ${!isHomepage && "p-8"} overflow-y-auto`}>
+          <div
+            className={`${isHomepage && "hidden"} flex flex-col mb-3 md:mb-6 md:flex-row md:items-center justify-between gap-4`}
+          >
             <div className="">
               <h2 className="text-2xl font-bold tracking-tight">
                 Sample Requests
@@ -160,7 +144,9 @@ const SampleRequest = () => {
               </button>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3 mb-6">
+          <div
+            className={`${isHomepage && "hidden"} flex flex-wrap items-center gap-3 mb-6`}
+          >
             {/* STATUS FILTER */}
             <div className="relative">
               <button
@@ -278,7 +264,9 @@ const SampleRequest = () => {
                     <th className="py-4 px-6 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                       Request Status
                     </th>
-                    <th className="py-4 px-6 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">
+                    <th
+                      className={`${isHomepage && "hidden"} py-4 px-6 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right`}
+                    >
                       Actions
                     </th>
                   </tr>
@@ -344,7 +332,7 @@ const SampleRequest = () => {
                               </span>
                             </td>
 
-                            <td className="py-4 px-6 text-right">
+                            <td className={`${isHomepage && "hidden"} py-4 px-6 text-right`}>
                               <div className="flex items-center justify-end gap-1">
                                 <button
                                   onClick={() => {
