@@ -1,6 +1,6 @@
 import { useAuthStore } from "../../store/authStore";
 import { useEffect, useState } from "react";
-import { ChevronDown, SquarePen, Plus, X, Trash2, Search } from "lucide-react";
+import { SquarePen, Plus, X, Trash2, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { buyerApi } from "../../utils/api";

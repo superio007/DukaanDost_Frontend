@@ -104,7 +104,7 @@ const SampleRequestForm = ({ RequestId, onClose }: Props) => {
     queryFn: fetchAllInventory,
     // staleTime: 1000 * 60 * 5,
   });
-
+  console.log(inventoryList);
   /* ===============================
      FETCH SINGLE REQUEST
   =============================== */
