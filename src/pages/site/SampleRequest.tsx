@@ -460,7 +460,7 @@ const SampleRequest = ({ isHomepage = false }) => {
                                 </button>
                                 <button
                                   onClick={() => setDeleteConfirm(request._id)}
-                                  className="p-2 rounded-lg hover:bg-slate-50 hover:text-red-600 hover:cursor-pointer text-slate-600"
+                                  className={`${(isRole === "SALES" && "hidden") || (isRole === "SAMPLING_HEAD" && "hidden")} p-2 rounded-lg hover:bg-slate-50 hover:text-red-600 hover:cursor-pointer text-slate-600`}
                                 >
                                   <Trash2 size={18} />
                                 </button>
