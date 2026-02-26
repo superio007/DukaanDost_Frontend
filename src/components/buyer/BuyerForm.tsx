@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import { buyerApi } from "../../utils/api";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
@@ -27,7 +27,7 @@ const ErrorText = ({ msg }: { msg?: string }) =>
   msg ? <p className="text-red-600 text-sm mt-1">{msg}</p> : null;
 
 const BuyerForm = ({ BuyerId, onClose }: Props) => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const {

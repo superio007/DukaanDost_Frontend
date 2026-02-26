@@ -22,7 +22,7 @@ const Buyer = () => {
   const [selectedBuyerId, setSelectedBuyerId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  // const [deleting, setDeleting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<any>({});
 

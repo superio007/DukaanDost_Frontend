@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useForm, useFieldArray, useWatch } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import FabricAutocomplete from "../Inventory/FabricAutocomplete";
 import api from "../../utils/api";
@@ -138,21 +138,21 @@ const SampleRequestForm = ({ RequestId, onClose }: Props) => {
   /* ===============================
      HANDLE FABRIC SELECTION
   =============================== */
-  const handleFabricSelect = (index: number, inventoryId: string) => {
-    const selectedInventory = inventoryList.find(
-      (inv) => inv._id === inventoryId,
-    );
+  // const handleFabricSelect = (index: number, inventoryId: string) => {
+  //   const selectedInventory = inventoryList.find(
+  //     (inv) => inv._id === inventoryId,
+  //   );
 
-    if (selectedInventory) {
-      setValue(`items.${index}.fabricName`, selectedInventory.fabricName);
-      setValue(`items.${index}.color`, selectedInventory.color);
-      setValue(`items.${index}.gsm`, selectedInventory.gsm);
-      setValue(
-        `items.${index}.availableMeters`,
-        selectedInventory.availableMeters,
-      );
-    }
-  };
+  //   if (selectedInventory) {
+  //     setValue(`items.${index}.fabricName`, selectedInventory.fabricName);
+  //     setValue(`items.${index}.color`, selectedInventory.color);
+  //     setValue(`items.${index}.gsm`, selectedInventory.gsm);
+  //     setValue(
+  //       `items.${index}.availableMeters`,
+  //       selectedInventory.availableMeters,
+  //     );
+  //   }
+  // };
 
   /* ===============================
      FILE UPLOAD HANDLER
