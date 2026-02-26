@@ -4,6 +4,7 @@ import {
   FileText,
   Archive,
   LogOut,
+  Users,
 } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { NavLink } from "react-router-dom";
@@ -65,6 +66,19 @@ const Sidebar = () => {
             </NavLink>
           );
         })}
+        {user?.role === "ADMIN" && (
+          <NavLink
+            to="/buyers"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              location.pathname === "/buyers"
+                ? "bg-[#1c6bf2] text-white"
+                : "text-slate-700 hover:bg-slate-100"
+            }`}
+          >
+            <Users size={20} />
+            <span className="font-medium">Buyers</span>
+          </NavLink>
+        )}
       </nav>
 
       {/* Footer */}

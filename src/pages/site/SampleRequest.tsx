@@ -9,17 +9,24 @@ import {
   X,
   Calendar,
   Filter,
+  Trash2,
+  RefreshCw,
 } from "lucide-react";
 import SampleRequestForm from "../../components/Requests/RequestForm";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import api from "../../utils/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import api, { sampleRequestApi } from "../../utils/api";
+import toast from "react-hot-toast";
+
 const fetchSampleRequests = async (page: number) => {
   const res = await api.get(`/api/sample-requests?page=${page}&limit=10`);
   return res?.data?.data;
 };
+// Add this right after the canChangeStatus function in SampleRequest.tsx
+
 const SampleRequest = ({ isHomepage = false }) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [openModal, setOpenModal] = useState(false);
   const [isRole, setisRole] = useState("");
   const user = useAuthStore((s) => s.user);
@@ -33,12 +40,24 @@ const SampleRequest = ({ isHomepage = false }) => {
   const [openFilter, setOpenFilter] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [statusChangeConfirm, setStatusChangeConfirm] = useState<{
+    requestId: string;
+    itemId: string;
+    newStatus: string;
+    fabricName: string;
+    requiredMeters: number;
+  } | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/auth/signin");
     }
     setisRole(user?.role || "");
   }, [isAuthenticated, navigate]);
+
   const { data: requests, isLoading: isReqestsLoading } = useQuery({
     queryKey: [`sample-requests`, page],
     queryFn: () => fetchSampleRequests(page),
@@ -46,6 +65,7 @@ const SampleRequest = ({ isHomepage = false }) => {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
+
   const getStatusStyle = (status: any) => {
     const map: any = {
       REQUESTED: "bg-amber-100 text-amber-700",
@@ -57,17 +77,87 @@ const SampleRequest = ({ isHomepage = false }) => {
 
     return map[status] || "bg-slate-100 text-slate-700";
   };
+
+  const getNextStatus = (currentStatus: string) => {
+    const statusFlow: Record<string, string> = {
+      REQUESTED: "IN_SAMPLING",
+      IN_SAMPLING: "SENT",
+      SENT: "APPROVED",
+    };
+    return statusFlow[currentStatus] || null;
+  };
+
+  const canChangeStatus = () => {
+    console.log("Current user role:", isRole);
+    console.log(
+      "Can change status:",
+      isRole === "ADMIN" || isRole === "SAMPLING_HEAD",
+    );
+    return isRole === "ADMIN" || isRole === "SAMPLING_HEAD";
+  };
+
+  const handleStatusChange = async (
+    requestId: string,
+    itemId: string,
+    newStatus: string,
+    fabricName: string,
+    requiredMeters: number,
+  ) => {
+    if (newStatus === "SENT") {
+      setStatusChangeConfirm({
+        requestId,
+        itemId,
+        newStatus,
+        fabricName,
+        requiredMeters,
+      });
+    } else {
+      await updateItemStatus(requestId, itemId, newStatus);
+    }
+  };
+
+  const updateItemStatus = async (
+    requestId: string,
+    itemId: string,
+    newStatus: string,
+  ) => {
+    console.log("Updating status:", { requestId, itemId, newStatus });
+    setUpdatingStatus(true);
+    try {
+      const response = await sampleRequestApi.updateItemStatus(
+        requestId,
+        itemId,
+        newStatus,
+      );
+      console.log("Status update response:", response);
+      await queryClient.invalidateQueries({ queryKey: ["sample-requests"] });
+      toast.success(`Status updated to ${newStatus.replaceAll("_", " ")}`);
+      setStatusChangeConfirm(null);
+    } catch (err: any) {
+      console.error("Status update error:", err);
+      console.error("Error response:", err?.response);
+      const errorMsg =
+        err?.response?.data?.message || "Failed to update status";
+      toast.error(errorMsg);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   const closeModal = () => {
     setOpenModal(false);
     setSelectedRequestId(null);
   };
+
   const totalPages = requests?.totalPages || 1;
+
   const toggleRow = (id: string) => {
     setExpandedRows((prev) => ({
       ...prev,
       [id]: !prev[id],
     }));
   };
+
   const filteredRequests =
     requests?.requests?.filter((request: any) => {
       const itemStatus = request.items?.[0]?.status || "REQUESTED";
@@ -105,21 +195,41 @@ const SampleRequest = ({ isHomepage = false }) => {
 
       return true;
     }) || [];
+
   const customerOptions = [
     "ALL",
     ...(requests?.requests
       ? Array.from(new Set(requests.requests.map((r: any) => r.buyerName)))
       : []),
   ];
+
   useEffect(() => {
     document.body.style.overflow = openModal ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
   }, [openModal]);
-  console.log(requests);
+
+  const handleDelete = async (id: string) => {
+    setDeleting(true);
+    try {
+      await api.delete(`/api/sample-requests/${id}`);
+      await queryClient.invalidateQueries({ queryKey: ["sample-requests"] });
+      setDeleteConfirm(null);
+      toast.success("Sample request deleted successfully");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete sample request");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <>
+      <div className="fixed top-0 right-0 bg-red-500 text-white p-2 z-50">
+        Role: {isRole} | Can Change: {canChangeStatus() ? "YES" : "NO"}
+      </div>
       <main className="flex-1 flex flex-col min-w-0 min-h-screen bg-background-light">
         <div className={`flex-1 ${!isHomepage && "p-8"} overflow-y-auto`}>
           <div
@@ -336,6 +446,7 @@ const SampleRequest = ({ isHomepage = false }) => {
 
                             <td
                               className={`${isHomepage && "hidden"} ${isRole === "SALES" && "hidden"} py-4 px-6 text-right`}
+                              onClick={(e) => e.stopPropagation()}
                             >
                               <div className="flex items-center justify-end gap-1">
                                 <button
@@ -347,6 +458,12 @@ const SampleRequest = ({ isHomepage = false }) => {
                                 >
                                   <SquarePen size={18} />
                                 </button>
+                                <button
+                                  onClick={() => setDeleteConfirm(request._id)}
+                                  className="p-2 rounded-lg hover:bg-slate-50 hover:text-red-600 hover:cursor-pointer text-slate-600"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
                               </div>
                             </td>
                           </tr>
@@ -356,30 +473,61 @@ const SampleRequest = ({ isHomepage = false }) => {
                               <td colSpan={5}>
                                 <div className="px-16 py-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                                   {request.items.map(
-                                    (item: any, index: number) => (
-                                      <div
-                                        key={index}
-                                        className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm"
-                                      >
-                                        <div className="flex items-center gap-3">
-                                          <div className="size-8 rounded bg-slate-100  flex items-center justify-center">
-                                            <TextAlignCenter size={18} />
+                                    (item: any, index: number) => {
+                                      const nextStatus = getNextStatus(
+                                        item.status,
+                                      );
+                                      const canUpdate =
+                                        canChangeStatus() && nextStatus;
+
+                                      return (
+                                        <div
+                                          key={index}
+                                          className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm"
+                                        >
+                                          <div className="flex items-center gap-3">
+                                            <div className="size-8 rounded bg-slate-100  flex items-center justify-center">
+                                              <TextAlignCenter size={18} />
+                                            </div>
+                                            <div>
+                                              <p className="text-xs font-bold text-slate-900 leading-tight">
+                                                {item?.fabricName}
+                                              </p>
+                                              <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                                                {item?.requiredMeters} Meters •{" "}
+                                                {item?.color} • {item?.gsm} gsm
+                                              </p>
+                                            </div>
                                           </div>
-                                          <div>
-                                            <p className="text-xs font-bold text-slate-900 leading-tight">
-                                              {item?.fabricName}
-                                            </p>
-                                            <p className="text-[10px] text-slate-500 font-medium mt-0.5">
-                                              {item?.requiredMeters} Meters •{" "}
-                                              {item?.color} • {item?.gsm} gsm
-                                            </p>
+                                          <div className="flex items-center gap-2">
+                                            <span
+                                              className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${getStatusStyle(
+                                                item.status,
+                                              )}`}
+                                            >
+                                              {item.status.replaceAll("_", " ")}
+                                            </span>
+                                            {canUpdate && (
+                                              <button
+                                                onClick={() =>
+                                                  handleStatusChange(
+                                                    request._id,
+                                                    item._id,
+                                                    nextStatus,
+                                                    item.fabricName,
+                                                    item.requiredMeters,
+                                                  )
+                                                }
+                                                className="p-1.5 rounded-lg hover:bg-slate-100 hover:text-[#1c6bf2] text-slate-600 transition-colors"
+                                                title={`Change to ${nextStatus.replaceAll("_", " ")}`}
+                                              >
+                                                <RefreshCw size={14} />
+                                              </button>
+                                            )}
                                           </div>
                                         </div>
-                                        <span className="bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full text-[9px] font-black uppercase">
-                                          Approved
-                                        </span>
-                                      </div>
-                                    ),
+                                      );
+                                    },
                                   )}
                                 </div>
                               </td>
@@ -398,7 +546,7 @@ const SampleRequest = ({ isHomepage = false }) => {
             <button
               disabled={page === 1}
               onClick={() => setPage((p) => p - 1)}
-              className="px-4 py-2 border rounded disabled:opacity-40"
+              className="px-4 py-2 border rounded disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Prev
             </button>
@@ -410,21 +558,21 @@ const SampleRequest = ({ isHomepage = false }) => {
             <button
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="px-4 py-2 border rounded disabled:opacity-40"
+              className="px-4 py-2 border rounded disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Next
             </button>
           </div>
         </div>
+
+        {/* ADD/EDIT MODAL */}
         {openModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            {/* BACKDROP */}
             <div
               className="absolute inset-0 bg-black/30 backdrop-blur-sm"
               onClick={() => setOpenModal(false)}
             />
 
-            {/* MODAL */}
             <div
               onClick={(e) => e.stopPropagation()}
               className="relative bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 z-10"
@@ -449,8 +597,110 @@ const SampleRequest = ({ isHomepage = false }) => {
             </div>
           </div>
         )}
+
+        {/* DELETE CONFIRMATION MODAL */}
+        {deleteConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div
+              className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+              onClick={() => setDeleteConfirm(null)}
+            />
+
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 z-10"
+            >
+              <h3 className="text-lg font-bold text-slate-900 mb-4">
+                Confirm Delete
+              </h3>
+              <p className="text-slate-600 mb-6">
+                Are you sure you want to delete this sample request? This action
+                cannot be undone.
+              </p>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="px-4 py-2 border border-slate-300 rounded text-sm font-medium hover:bg-slate-50"
+                  disabled={deleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDelete(deleteConfirm)}
+                  className="px-4 py-2 bg-red-600 text-white rounded text-sm font-medium hover:bg-red-700"
+                  disabled={deleting}
+                >
+                  {deleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STATUS CHANGE CONFIRMATION MODAL */}
+        {statusChangeConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div
+              className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+              onClick={() => setStatusChangeConfirm(null)}
+            />
+
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 z-10"
+            >
+              <h3 className="text-lg font-bold text-slate-900 mb-4">
+                Confirm Status Change
+              </h3>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-amber-800 font-medium">
+                  ⚠️ Inventory Deduction Warning
+                </p>
+                <p className="text-xs text-amber-700 mt-1">
+                  Changing status to "SENT" will deduct{" "}
+                  <span className="font-bold">
+                    {statusChangeConfirm.requiredMeters} meters
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-bold">
+                    {statusChangeConfirm.fabricName}
+                  </span>{" "}
+                  from inventory.
+                </p>
+              </div>
+              <p className="text-slate-600 mb-6">
+                Are you sure you want to proceed?
+              </p>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setStatusChangeConfirm(null)}
+                  className="px-4 py-2 border border-slate-300 rounded text-sm font-medium hover:bg-slate-50"
+                  disabled={updatingStatus}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() =>
+                    updateItemStatus(
+                      statusChangeConfirm.requestId,
+                      statusChangeConfirm.itemId,
+                      statusChangeConfirm.newStatus,
+                    )
+                  }
+                  className="px-4 py-2 bg-indigo-600 text-white rounded text-sm font-medium hover:bg-indigo-700"
+                  disabled={updatingStatus}
+                >
+                  {updatingStatus ? "Updating..." : "Confirm"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </>
   );
 };
+
 export default SampleRequest;

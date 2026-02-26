@@ -1,18 +1,19 @@
 import { useAuthStore } from "../../store/authStore";
 import { useEffect, useState } from "react";
-import { ChevronDown, SquarePen, Plus, X } from "lucide-react";
+import { ChevronDown, SquarePen, Plus, X, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../utils/api";
 import InventoryForm from "../../components/Inventory/InventoryForm";
 
-const fetchInventory = async () => {
-  const res = await api.get(`/api/inventory`);
+const fetchInventory = async (page: number, limit: number) => {
+  const res = await api.get(`/api/inventory?page=${page}&limit=${limit}`);
   return res?.data?.data;
 };
 
 const Inventory = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [openModal, setOpenModal] = useState(false);
   const [openFilter, setOpenFilter] = useState<string | null>(null);
@@ -21,18 +22,24 @@ const Inventory = () => {
   const [selectedInventoryId, setSelectedInventoryId] = useState<string | null>(
     null,
   );
+  const [page, setPage] = useState(1);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) navigate("/auth/signin");
   }, [isAuthenticated, navigate]);
 
-  const { data: inventory, isLoading } = useQuery({
-    queryKey: ["inventory"],
-    queryFn: fetchInventory,
+  const { data: inventoryData, isLoading } = useQuery({
+    queryKey: ["inventory", page],
+    queryFn: () => fetchInventory(page, 10),
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
+
+  const inventory = inventoryData?.inventory || [];
+  const totalPages = inventoryData?.totalPages || 1;
 
   const fabricOptions: string[] = [
     "ALL",
@@ -58,6 +65,7 @@ const Inventory = () => {
 
       return true;
     }) || [];
+
   const getColorStyle = (color: string) => {
     const map: Record<string, string> = {
       red: "bg-red-100 text-red-700",
@@ -71,6 +79,7 @@ const Inventory = () => {
 
     return map[color.toLowerCase()] || "bg-purple-100 text-purple-700";
   };
+
   useEffect(() => {
     document.body.style.overflow = openModal ? "hidden" : "";
 
@@ -78,10 +87,26 @@ const Inventory = () => {
       document.body.style.overflow = "";
     };
   }, [openModal]);
+
   const closeModal = () => {
     setOpenModal(false);
     setSelectedInventoryId(null);
   };
+
+  const handleDelete = async (id: string) => {
+    setDeleting(true);
+    try {
+      await api.delete(`/api/inventory/${id}`);
+      await queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      setDeleteConfirm(null);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete inventory");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <main className="flex-1 flex flex-col min-w-0 min-h-screen bg-background-light">
       <div className="flex-1 p-8 overflow-y-auto">
@@ -204,7 +229,9 @@ const Inventory = () => {
                 {isLoading ? (
                   <tr>
                     <td colSpan={6} className="py-10 text-center">
-                      Loading...
+                      <div className="flex justify-center">
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-[#0077B6]" />
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -233,15 +260,23 @@ const Inventory = () => {
                         {new Date(item.createdAt).toLocaleDateString()}
                       </td>
                       <td className="py-4 px-6 text-right">
-                        <button
-                          onClick={() => {
-                            (setSelectedInventoryId(item._id),
-                              setOpenModal(true));
-                          }}
-                          className="p-2 rounded hover:text-[#1c6bf2] hover:cursor-pointer text-slate-600"
-                        >
-                          <SquarePen size={18} />
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedInventoryId(item._id);
+                              setOpenModal(true);
+                            }}
+                            className="p-2 rounded hover:text-[#1c6bf2] hover:cursor-pointer text-slate-600"
+                          >
+                            <SquarePen size={18} />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm(item._id)}
+                            className="p-2 rounded hover:text-red-600 hover:cursor-pointer text-slate-600"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -250,23 +285,46 @@ const Inventory = () => {
             </table>
           </div>
         </div>
+
+        {/* PAGINATION */}
+        <div className="flex justify-center gap-3 mt-6">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="px-4 py-2 border rounded disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Prev
+          </button>
+
+          <span className="px-4 py-2 text-sm font-bold">
+            Page {page} / {totalPages}
+          </span>
+
+          <button
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="px-4 py-2 border rounded disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
       </div>
+
+      {/* ADD/EDIT MODAL */}
       {openModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* BACKDROP */}
           <div
             className="absolute inset-0 bg-black/30 backdrop-blur-sm"
             onClick={() => setOpenModal(false)}
           />
 
-          {/* MODAL */}
           <div
             onClick={(e) => e.stopPropagation()}
             className="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 z-10"
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-slate-900">
-                Add New Stock
+                {selectedInventoryId ? "Edit Stock" : "Add New Stock"}
               </h3>
               <button
                 onClick={() => setOpenModal(false)}
@@ -281,6 +339,46 @@ const Inventory = () => {
               InventoryId={selectedInventoryId}
               onClose={closeModal}
             />
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            onClick={() => setDeleteConfirm(null)}
+          />
+
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 z-10"
+          >
+            <h3 className="text-lg font-bold text-slate-900 mb-4">
+              Confirm Delete
+            </h3>
+            <p className="text-slate-600 mb-6">
+              Are you sure you want to delete this inventory item? This action
+              cannot be undone.
+            </p>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="px-4 py-2 border border-slate-300 rounded text-sm font-medium hover:bg-slate-50"
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirm)}
+                className="px-4 py-2 bg-red-600 text-white rounded text-sm font-medium hover:bg-red-700"
+                disabled={deleting}
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
           </div>
         </div>
       )}
