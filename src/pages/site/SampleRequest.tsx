@@ -227,9 +227,9 @@ const SampleRequest = ({ isHomepage = false }) => {
 
   return (
     <>
-      <div className="fixed top-0 right-0 bg-red-500 text-white p-2 z-50">
+      {/* <div className="fixed top-0 right-0 bg-red-500 text-white p-2 z-50">
         Role: {isRole} | Can Change: {canChangeStatus() ? "YES" : "NO"}
-      </div>
+      </div> */}
       <main className="flex-1 flex flex-col min-w-0 min-h-screen bg-background-light">
         <div className={`flex-1 ${!isHomepage && "p-8"} overflow-y-auto`}>
           <div
